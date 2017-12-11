@@ -6,25 +6,24 @@ import qualified Data.Map.Strict as Map
 
 data Input = Constant Word16 | Noop String | Not String | Shift Input Int | And Input Input | Or Input Input deriving (Show, Eq)
 
-getSides :: [String] -> (String, [String])
-getSides x = (last x, takeWhile (/="->") x)
-
 getInstructions :: String -> [(String, Input)]
-getInstructions s =
-  let instructions = map getSides $ map words $ lines s
-      readInput i =
-        case i of
-          (x:[]) -> if all isDigit x then Constant (read x) else Noop x
-          ("NOT":x:[]) -> Not x
-          (x:op:y:[]) ->
-            let inputX = (readInput [x])
-                inputY = (readInput [y])
-            in case op of
-              "AND" -> And inputX inputY
-              "OR" -> Or inputX inputY
-              "LSHIFT" -> Shift inputX (read y)
-              "RSHIFT" -> Shift inputX (negate (read y))
-  in map (\(rhs, lhs) -> (rhs, readInput lhs)) instructions
+getInstructions s = map getSides $ map words $ lines s
+  where
+    getSides :: [String] -> (String, Input)
+    getSides x = (last x, readInput $ takeWhile (/="->") x)
+    readAtom :: String -> Input
+    readAtom a = if all isDigit a then Constant (read a) else Noop a
+    readInput :: [String] -> Input
+    readInput i =
+      case i of
+        (x:[]) -> readAtom x
+        ("NOT":x:[]) -> Not x
+        (x:op:y:[]) ->
+          case op of
+            "AND" -> And (readAtom x) (readAtom y)
+            "OR" -> Or (readAtom x) (readAtom y)
+            "LSHIFT" -> Shift (readAtom x) (read y)
+            "RSHIFT" -> Shift (readAtom x) (negate (read y))
 
 isConstant (Constant _) = True
 isConstant _ = False
@@ -49,15 +48,15 @@ applyBinary f (Just x) (Just y) = Just (f x y)
 applyBinary _ _ _ = Nothing
 
 buildValueMap :: String -> Map.Map String Word16
-buildValueMap s = 
-  let instructions = getInstructions s
-      initialMap = Map.fromList $ map (\(x, Constant y) -> (x, y)) $ filter (isConstant . snd) instructions
-      buildValueMap' m [] = m
-      buildValueMap' m ((o, i):is) =
-        let value = valueFor (o, i) m
-        in if (isNothing value) then buildValueMap' m (is ++ [(o, i)])
-           else buildValueMap' (Map.insert o (fromJust value) m) is
-  in buildValueMap' initialMap (filter (not . isConstant . snd) instructions)
+buildValueMap s = buildValueMap' initialMap (filter (not . isConstant . snd) instructions)
+  where
+    instructions = getInstructions s
+    initialMap = Map.fromList $ map (\(x, Constant y) -> (x, y)) $ filter (isConstant . snd) instructions
+    buildValueMap' m [] = m
+    buildValueMap' m ((o, i):is) =
+      let value = valueFor (o, i) m
+      in if (isNothing value) then buildValueMap' m (is ++ [(o, i)])
+          else buildValueMap' (Map.insert o (fromJust value) m) is
 
 solve = do
   input <- readFile "input.txt"
