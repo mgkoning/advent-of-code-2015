@@ -51,22 +51,23 @@ stateAfterSteps grid n newStateFn = last $ take (n + 1) $ scanl (\g _ -> newStat
 lightsOn :: LightGrid -> Int
 lightsOn grid = length $ filter (== On) $ elems grid
 
-test = do
-  let grid1 = Map.fromList [((0,0), On), ((0,1), Off), ((1,0), On), ((1,1), On), ((0,2), Off), ((1,2), On)]
-  putStrLn $ show $ newStateAt1 (0, 0) grid1
-  let grid2 = Map.fromList [((0,0), On), ((0,1), Off), ((1,0), On), ((1,1), Off)]
-  putStrLn $ show $ newStateAt1 (0, 0) grid2
-  let evolve = newState grid1 newStateAt1
-  putStrLn $ show $ evolve
-  putStrLn $ show $ newState evolve newStateAt1
-
-testInput = ".#.#.#\n...##.\n#....#\n..#...\n#.#..#\n####.."
-testGrid = lightGridFromString testInput
-
 solve = do
   text <- readFile "input.txt"
   let grid = lightGridFromString text
   putStrLn "Part 1"
   putStrLn $ show $ lightsOn $ stateAfterSteps grid 100 newStateAt1
-  putStrLn "Part 1"
+  putStrLn "Part 2"
   putStrLn $ show $ lightsOn $ stateAfterSteps grid 100 newStateAt2
+
+
+test = do
+    let grid1 = Map.fromList [((0,0), On), ((0,1), Off), ((1,0), On), ((1,1), On), ((0,2), Off), ((1,2), On)]
+    putStrLn $ show $ newStateAt1 (0, 0) grid1
+    let grid2 = Map.fromList [((0,0), On), ((0,1), Off), ((1,0), On), ((1,1), Off)]
+    putStrLn $ show $ newStateAt1 (0, 0) grid2
+    let evolve = newState grid1 newStateAt1
+    putStrLn $ show $ evolve
+    putStrLn $ show $ newState evolve newStateAt1
+  
+testInput = ".#.#.#\n...##.\n#....#\n..#...\n#.#..#\n####.."
+testGrid = lightGridFromString testInput
